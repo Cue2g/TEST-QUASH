@@ -2,9 +2,8 @@ const admin   = require('firebase-admin');
 const db      = admin.firestore()
 
 exports.search = async function (collectionName) {
-   
     try {
-        const query = db.collection('empresa');
+        const query = db.collection(collectionName);
         const querySnapshot = await query.get();
         const docs  = querySnapshot.docs;
         return docs

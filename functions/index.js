@@ -5,7 +5,6 @@ const express   = require('express');
 const app       = express()
 require('dotenv').config()
 
-
 var serviceAccount = require(process.env.KEY_BD);
 
 admin.initializeApp({

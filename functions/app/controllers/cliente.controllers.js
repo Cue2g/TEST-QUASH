@@ -2,22 +2,21 @@ const Joi            = require('@hapi/joi');
 const funtionHelprs  = require('../helpers/functionsHelpers')
 const admin          = require('firebase-admin');
 const db             = admin.firestore()
-const collectionName = 'empresa';
+const collectionName = 'cliente';
 
-
-const schemaEmpresa = Joi.object({
-    codeRif   : Joi.string().min(5).max(10).required(),
+const schemaCliente = Joi.object({
+    dni       : Joi.string().min(5).max(10).required(),
     name      : Joi.string().min(5).max(40).required(),
     country   : Joi.string().min(2).max(15).required(),
     state     : Joi.string().min(2).max(15).required(),
     address   : Joi.string().min(2).max(150).required(),
     telefono  : Joi.string().min(2).max(40).required(),
-    email     : Joi.string().min(2).max(25)
-  })
+    email     : Joi.string().min(2).max(50)
+})
 
-exports.postEmpresa = async function ( req, res) 
+exports.postCliente = async function ( req, res) 
 {   
-    const { error } = schemaEmpresa.validate(req.body);
+    const { error } = schemaCliente.validate(req.body);
 
     if (error){
         return res.status(400).json({
@@ -35,26 +34,26 @@ exports.postEmpresa = async function ( req, res)
           })
     }
 
-    const response = docs.map((doc) => (doc.data().codeRif));
-    const validar = response.some((elem) => elem === req.body.codeRif);
+    const response = docs.map((doc) => (doc.data().dni));
+    const validar = response.some((elem) => elem === req.body.dni);
 
     if (validar){
         return res.status(400).json({
             estatus : 'error',
-            msg     : 'la empresa ya existe'
+            msg     : 'el usuario ya esta registrado'
         })
     }
     
     try 
     {
-        await db.collection('empresa')
+        await db.collection(collectionName)
             .doc()
-            .create(createEmpresa(req.body))
+            .create(createCliente(req.body))
         return res.status(200).json(
             {
                 status        : "success",
-                description   : "Empresa Creada de forma satisfactoria",
-                data          : [createEmpresa(req.body)] 
+                description   : "Se a guardado el cliente",
+                data          : [createCliente(req.body)] 
            }
         );
     } 
@@ -68,7 +67,7 @@ exports.postEmpresa = async function ( req, res)
     }
 }
 
-exports.getEmpresa = async function (req, res){
+exports.getCliente = async function (req, res){
 
     try {
 
@@ -76,7 +75,7 @@ exports.getEmpresa = async function (req, res){
         const docs = await funtionHelprs.search(collectionName);
         const response = docs.map(doc => ({
         id        : doc.id,
-        codeRif   : doc.data().codeRif,
+        dni       : doc.data().dni,
         name      : doc.data().name,
         country   : doc.data().country,
         state     : doc.data().state,
@@ -102,22 +101,24 @@ exports.getEmpresa = async function (req, res){
     }
 }
 
-exports.deleteEmpresa = async function (req, res ){
-    const key =  req.params.empresa_code;
+exports.deleteCliente = async function (req, res ){
+    const key =  req.params.cliente_code;
 
     const docs = await funtionHelprs.search(collectionName);
     if(!docs){
         return res.status(400).json({
             error :  true,
-            msg   :  'Error en la validacion de la empresa'
+            msg   :  'Error en la validacion del cliente'
           })
     }
 
     const docResponse = docs.map(doc => ({
         id        : doc.id,
-        codeRif   : doc.data().codeRif
+        dni  : doc.data().dni
     }))
-    const buscar = docResponse.find((elem) => elem.codeRif === key);
+    console.log("key: " + key);
+    console.log(docResponse);
+    const buscar = docResponse.find((elem) => elem.dni === key);
     if(!buscar) {
         res.status(404).json({
             error :  true,
@@ -135,28 +136,32 @@ exports.deleteEmpresa = async function (req, res ){
     }
 }
 
-exports.putEmpresa = async function (req, res ){
-    const key =  req.params.empresa_code;
+exports.putCliente = async function (req, res ){
+    console.log('here');
+    const key =  req.params.cliente_code;
     const docs = await funtionHelprs.search(collectionName);
-    
+    console.log(docs);
+
+
     if(!docs){
         return res.status(400).json({
             error :  true,
-            msg   :  'Error en la validacion de la empresa'
+            msg   :  'Error en la validacion del cliente'
           })
     }
 
     const docResponse = docs.map(doc => ({
-        id        : doc.id,
-        codeRif   : doc.data().codeRif
+        id    : doc.id,
+        dni   : doc.data().dni
     }))
-
-    const buscar = docResponse.find((elem) => elem.codeRif === key);
+    console.log(key);
+    console.log(docResponse);
+    const buscar = docResponse.find((elem) => elem.dni === key);
 
     if(!buscar) {
         res.status(404).json({
             error :  true,
-            msg   :  'No se encontro la empresa'
+            msg   :  'No se encontro el cliente'
           })
     }
 
@@ -178,12 +183,10 @@ exports.putEmpresa = async function (req, res ){
     
 }
 
-
-////funciones 
-function createEmpresa(body) {
+function createCliente(body) {
 
     const data = {
-        codeRif   : body.codeRif,
+        dni       : body.dni,
         name      : body.name,
         country   : body.country,
         state     : body.state,
@@ -225,4 +228,4 @@ function createJson(data) {
         return json
     }
 }
-
+    

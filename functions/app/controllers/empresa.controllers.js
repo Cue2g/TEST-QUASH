@@ -9,7 +9,7 @@ const schemaEmpresa = Joi.object({
     codeRif   : Joi.string().min(5).max(10).required(),
     name      : Joi.string().min(5).max(40).required(),
     country   : Joi.string().min(2).max(15).required(),
-    state     : Joi.string().min(2).max(15).required(),
+    state     : Joi.string().min(2).max(50).required(),
     address   : Joi.string().min(2).max(150).required(),
     telefono  : Joi.string().min(2).max(40).required(),
     email     : Joi.string().min(2).max(25)

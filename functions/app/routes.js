@@ -17,8 +17,6 @@ module.exports = function (app){
     app.route(urlEmpresa + '/:empresa_code')
       .put(empresa.putEmpresa)
       
-
-
     //tours 
     const urlTour = '/api/tour';
 
@@ -34,6 +32,10 @@ module.exports = function (app){
     app.route(urlTour  + '/idTour=:tour_code')
       .put(tour.putTour)
 
+    app.route(urlTour  + '/difficulty')
+      .get(tour.difficulty) 
+
+
     //clientes
     
     const urlCliente = '/api/cliente';
@@ -44,10 +46,21 @@ module.exports = function (app){
     app.route(urlCliente)
       .get(cliente.getCliente)
 
+    app.route(urlCliente + '/byDNI=:cliente_code')
+      .get(cliente.getClienteID)
+
     app.route(urlCliente + '/idCliente=:cliente_code')
       .delete(cliente.deleteCliente)
 
     app.route(urlCliente + '/idCliente=:cliente_code')
       .put(cliente.putCliente)
 
+    app.route(urlCliente + '/addTour/idCliente=:cliente_code')
+      .put(cliente.addTour)
+
+    app.route(urlCliente + '/addTours/idCliente=:cliente_code')
+      .put(cliente.addTour)
+    
+    app.route(urlCliente + '/deleteTour/idCliente=:cliente_code')
+      .delete(cliente.deleteTour)
   }

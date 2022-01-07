@@ -36,6 +36,10 @@ const schemaTourEdit = Joi.object({
     startLocation   : Joi.string()
 })
 
+const schemaTourD = Joi.object({
+    difficulty : Joi.array().required()
+})
+
 exports.postTour= async function ( req, res) { 
 
     const docs = await funtionHelprs.search('empresa');
@@ -216,7 +220,121 @@ exports.putTour = async function (req, res ){
         return res.status(404).json(response)
     }
 
-    return res.status(404).json(response)
+    return res.status(200).json(response)
+}
+
+exports.difficulty = async function (req, res ){
+
+    const today = new Date().toLocaleString()
+    try {
+
+        const params =  req.body;
+        
+
+        const { error } = schemaTourD.validate(req.body);
+
+        if (error){
+        return res.status(400).json({
+                error :  true,
+                msg   :  error.details[0].message
+                })
+        }
+
+        const difficulty = params.difficulty
+
+        if(difficulty.length === 0){
+            return res.status(404).json({
+                error :  true,
+                msg   :  'el arreglo esta vacio'
+              })
+        }
+
+        if(difficulty.length > 2){
+           return res.status(404).json({
+                error :  true,
+                msg   :  'el arreglo contiene mas informacion de la que es requerida'
+              })
+        }
+
+       
+    
+        if(difficulty[0] !== 'medium' && difficulty[0] !=='difficult'){
+            return res.status(400).json({
+                error :  true,
+                msg   :  'el arreglo contiene informacion que no es requerida, intente con dificultades medium y difficult'
+              })
+        }
+
+        if(difficulty.length === 2 ){
+            if(difficulty[1] !== 'medium' && difficulty[1] !=='difficult'){
+                return res.status(400).json({
+                    error :  true,
+                    msg   :  'el arreglo contiene informacion que no es requerida, intente con dificultades medium y difficult'
+                  })
+            }
+        }
+        
+        
+
+
+        let Ref = db.collection(collectionName);
+        let query = await Ref.where('difficulty', 'in', difficulty).get()
+        let docs  = query.docs;
+
+        if(docs.length === 0){
+           return res.status(404).json({
+                error :  true,
+                msg   :  'No se encontro el cliente'
+              })
+        }
+
+        const response = docs.map(doc => ({
+            id              : doc.id,
+            codeRif         :  doc.data().codeRif,
+            name            :  doc.data().name,
+            duration        :  doc.data().duration,
+            maxGroupSize    :  doc.data().maxGroupSize,
+            difficulty      :  doc.data().difficulty,
+            ratingsAverage  :  doc.data().ratingsAverage,
+            ratingsQuantity :  doc.data().ratingsQuantity,
+            price           :  doc.data().price,
+            summary         :  doc.data().summary,
+            description     :  doc.data().description,
+            createdAt       :  doc.data().createdAt,
+            startDate       :  doc.data().startDate,
+            startLocation   :  doc.data().startLocation
+            }))
+        
+
+        const responseFilterR = response.filter( (elem) => {elem.ratingsAverage > 4.7})
+        
+        if(responseFilterR.length === 0){
+            return res.status(404).json({
+                error :  true,
+                msg   :  'No se encontro el ningun tour mayor a 4.7 de rating'
+              })
+        }
+
+        
+        res.status(200).json({
+            "status": "success",
+            "requestTime": today,
+            "results": responseFilterR.length,
+            "data": responseFilterR
+            })
+
+
+
+
+    } catch (error) {
+
+        return res.status(500).json({
+            "status"     : "error",
+            "requestTime": today,
+            "description": error
+            })
+        
+    }
 }
 
 

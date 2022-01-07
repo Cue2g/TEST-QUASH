@@ -1,6 +1,7 @@
 const Joi            = require('@hapi/joi');
 const funtionHelprs  = require('../helpers/functionsHelpers')
 const admin          = require('firebase-admin');
+const { result } = require('@hapi/joi/lib/base');
 const db             = admin.firestore()
 const collectionName = 'cliente';
 
@@ -14,6 +15,10 @@ const schemaCliente = Joi.object({
     email     : Joi.string().min(2).max(50)
 })
 
+const schemaTours = Joi.object({
+    tours : Joi.array().required()
+})
+
 exports.postCliente = async function ( req, res) 
 {   
     const { error } = schemaCliente.validate(req.body);
@@ -22,7 +27,7 @@ exports.postCliente = async function ( req, res)
         return res.status(400).json({
           error :  true,
           msg   :  error.details[0].message
-        })
+        });
     }
 
     const docs = await funtionHelprs.search(collectionName);
@@ -71,7 +76,7 @@ exports.getCliente = async function (req, res){
 
     try {
 
-        const today = new Date().toLocaleString()
+        const today = new Date().toLocaleString();
         const docs = await funtionHelprs.search(collectionName);
         const response = docs.map(doc => ({
         id        : doc.id,
@@ -116,8 +121,7 @@ exports.deleteCliente = async function (req, res ){
         id        : doc.id,
         dni  : doc.data().dni
     }))
-    console.log("key: " + key);
-    console.log(docResponse);
+
     const buscar = docResponse.find((elem) => elem.dni === key);
     if(!buscar) {
         res.status(404).json({
@@ -137,10 +141,8 @@ exports.deleteCliente = async function (req, res ){
 }
 
 exports.putCliente = async function (req, res ){
-    console.log('here');
     const key =  req.params.cliente_code;
     const docs = await funtionHelprs.search(collectionName);
-    console.log(docs);
 
 
     if(!docs){
@@ -154,10 +156,7 @@ exports.putCliente = async function (req, res ){
         id    : doc.id,
         dni   : doc.data().dni
     }))
-    console.log(key);
-    console.log(docResponse);
     const buscar = docResponse.find((elem) => elem.dni === key);
-
     if(!buscar) {
         res.status(404).json({
             error :  true,
@@ -182,6 +181,204 @@ exports.putCliente = async function (req, res ){
     return res.status(200).json(response)
     
 }
+
+
+exports.addTour = async function (req, res ){
+
+    const { error } = schemaTours.validate(req.body);
+
+    if (error){
+        return res.status(400).json({
+          error :  true,
+          msg   :  error.details[0].message
+        })
+    }
+
+    const key =  req.params.cliente_code;
+    const docs = await funtionHelprs.search(collectionName);
+    const toursBA = req.body.tours;
+    if(!docs){
+        return res.status(400).json({
+            error :  true,
+            msg   :  'Error en la validacion del cliente'
+          })
+    }
+
+    const docResponse = docs.map(doc => ({
+        id    : doc.id,
+        dni   : doc.data().dni,
+        tours : doc.data().tours
+    }))
+    const buscar = docResponse.find((elem) => elem.dni === key);
+
+    if(!buscar) {
+        res.status(404).json({
+            error :  true,
+            msg   :  'No se encontro el cliente'
+          })
+    }
+
+    const docsTour = await funtionHelprs.search('tour');
+    if(!docsTour){
+        return res.status(400).json({
+            error :  true,
+            msg   :  'Error en la validacion del tour'
+          })
+    }
+    const docResTour = docsTour.map(doc => (doc.id))
+    const arraytoursPermitidos = []
+    toursBA.forEach(elem => {
+        let search = docResTour.find((elem2) => elem2 === elem);
+        if(search){
+            arraytoursPermitidos.push(search)
+        }
+    });
+    
+    
+
+    if(arraytoursPermitidos.length === 0){
+        return res.status(400).json({
+            error :  true,
+            msg   :  'Ningung tour introducido esta registrado'
+          })
+    }
+
+    const arrayHelper = arraytoursPermitidos.concat(buscar.tours);
+
+    let resultArray = arrayHelper.filter((item,index)=>{
+        return arrayHelper.indexOf(item) === index;
+    })
+
+
+    const id = buscar.id;
+    
+    const response = await funtionHelprs.update(collectionName, id, {tours:resultArray});
+
+    return res.status(200).json(response)
+
+
+}
+
+exports.deleteTour= async function (req, res ){
+    const key =  req.params.cliente_code;
+    const docs = await funtionHelprs.search(collectionName);
+    const tourBA = req.body.tour;
+    if(!docs){
+        return res.status(400).json({
+            error :  true,
+            msg   :  'Error en la validacion del cliente'
+          })
+    }
+
+    const docResponse = docs.map(doc => ({
+        id    : doc.id,
+        dni   : doc.data().dni,
+        tours : doc.data().tours
+    }))
+    const buscar = docResponse.find((elem) => elem.dni === key);
+
+    if(!buscar) {
+        res.status(404).json({
+            error :  true,
+            msg   :  'No se encontro el cliente'
+          })
+    }
+
+
+    var resultArray = removeItemFromArr(buscar.tours,tourBA)
+
+
+
+    const id = buscar.id;
+    
+    const response = await funtionHelprs.update(collectionName, id, {tours:resultArray});
+
+    return res.status(200).json(response)
+
+}
+
+exports.getClienteID = async function (req, res ){
+         const today = new Date().toLocaleString()
+    try {
+
+        const key =  req.params.cliente_code;
+
+        let Ref = db.collection('cliente');
+        let query = await Ref.where('dni', '==', key).get()
+        let docs  = query.docs;
+
+        if(docs.length === 0){
+            res.status(404).json({
+                error :  true,
+                msg   :  'No se encontro el cliente'
+              })
+        }
+
+        const response = docs.map(doc => ({
+        id        : doc.id,
+        dni       : doc.data().dni,
+        name      : doc.data().name,
+        country   : doc.data().country,
+        state     : doc.data().state,
+        address   : doc.data().address,
+        telefono  : doc.data().telefono,
+        email     : doc.data().email,
+        fechaReg  : doc.data().fechaReg,
+        tours     : doc.data().tours
+        }))
+
+        const toursC = response[0].tours
+
+        const docsT = await funtionHelprs.search('tour');
+    
+        if(!docsT){
+        return res.status(400).json({
+            error :  true,
+            msg   :  'Error en la validacion del tour'
+          })
+        }
+
+        const docResponseT = docsT.map(doc => ({
+        id              : doc.id,
+        codeRif         :  doc.data().codeRif,
+        name            :  doc.data().name,
+        duration        :  doc.data().duration,
+        maxGroupSize    :  doc.data().maxGroupSize,
+        difficulty      :  doc.data().difficulty,
+        ratingsAverage  :  doc.data().ratingsAverage,
+        ratingsQuantity :  doc.data().ratingsQuantity,
+        price           :  doc.data().price,
+        summary         :  doc.data().summary,
+        description     :  doc.data().description,
+        createdAt       :  doc.data().createdAt,
+        startDate       :  doc.data().startDate,
+        startLocation   :   doc.data().startLocation
+        }))
+
+
+        const resultTour = toursC.map( (tourR) => {
+            let buscar = docResponseT.find((elem) => elem.id === tourR);
+            return buscar
+        })
+
+        response[0].tours = resultTour
+
+        return res.status(200).json({
+        "status": "success",
+        "requestTime": today,
+        "results": response.length,
+        "data": response
+        })
+            
+    } catch (error) {
+        return res.status(500).json({
+            "status"     : "error",
+            "requestTime": today,
+            "description": error
+            })
+    }
+}
+
 
 function createCliente(body) {
 
@@ -228,4 +425,16 @@ function createJson(data) {
         return json
     }
 }
-    
+
+function removeItemFromArr( arr, item ) {
+    return arr.filter( function( e ) {
+        return e !== item;
+    } );
+};
+
+
+
+
+
+
+

@@ -1,23 +1,23 @@
-const Joi            = require('@hapi/joi');
-const funtionHelprs  = require('../helpers/functionsHelpers')
-const admin          = require('firebase-admin');
+const Joi            = require("@hapi/joi");
+const funtionHelprs  = require("../helpers/functionsHelpers")
+const admin          = require("firebase-admin");
 const db             = admin.firestore()
-const collectionName = 'tour';
+const collectionName = "tour";
 
 const schemaTour = Joi.object({
-    codeRif         : Joi.string().min(5).max(10).required(),
-    name            : Joi.string().min(10).max(40,).required(),
-    duration        : Joi.number().required(),
-    maxGroupSize    : Joi.number().required(),
-    difficulty      : Joi.string().valid('easy','medium', 'difficult').required(),
-    ratingsAverage  : Joi.number().min(1).max(5).default(4.5).required(),
+    codeRif : Joi.string().min(5).max(10).required(),
+    name : Joi.string().min(10).max(40,).required(),
+    duration : Joi.number().required(),
+    maxGroupSize : Joi.number().required(),
+    difficulty : Joi.string().valid("easy","medium", "difficult").required(),
+    ratingsAverage : Joi.number().min(1).max(5).default(4.5).required(),
     ratingsQuantity : Joi.number().default(0),
-    price           : Joi.number().required(),
-    summary         : Joi.string().trim().required(),
-    description     : Joi.string().trim(),
-    createdAt       : Joi.date().default(Date.now()),
-    startDate       : Joi.string(),
-    startLocation   : Joi.string()
+    price : Joi.number().required(),
+    summary : Joi.string().trim().required(),
+    description : Joi.string().trim(),
+    createdAt : Joi.date().default(Date.now()),
+    startDate : Joi.string(),
+    startLocation : Joi.string()
 })
 
 const schemaTourEdit = Joi.object({
@@ -25,7 +25,7 @@ const schemaTourEdit = Joi.object({
     name            : Joi.string().min(10).max(40,),
     duration        : Joi.number(),
     maxGroupSize    : Joi.number(),
-    difficulty      : Joi.string().valid('easy','medium', 'difficult'),
+    difficulty      : Joi.string().valid("easy","medium", "difficult"),
     ratingsAverage  : Joi.number().min(1).max(5).default(4.5),
     ratingsQuantity : Joi.number().default(0),
     price           : Joi.number(),
@@ -40,16 +40,16 @@ const schemaTourD = Joi.object({
     difficulty : Joi.array().required()
 })
 
-exports.postTour= async function ( req, res) { 
+exports.postTour= async function ( req, res) {
 
-    const docs = await funtionHelprs.search('empresa');
+    const docs = await funtionHelprs.search("empresa");
     const response = docs.map((doc) => (doc.data().codeRif));
     const validar = response.some((elem) => elem === req.params.tour_code);
 
     if (!validar){
         return res.status(400).json({
-            estatus : 'error',
-            msg     : 'La empresa no existe'
+            estatus : "error",
+            msg     : "La empresa no existe"
         })
     }
 
@@ -63,7 +63,7 @@ exports.postTour= async function ( req, res) {
           msg   :  error.details[0].message
         })
     }
-    try {   
+    try {
         await db.collection(collectionName)
             .doc()
             .create(createTour(req.body))
@@ -71,11 +71,11 @@ exports.postTour= async function ( req, res) {
             {
                 status        : "success",
                 description   : "El  tour creado de forma satisfactoria",
-                data          : [createTour(req.body)] 
+                data          : [createTour(req.body)]
            }
         )
-    } 
-    catch (err) 
+    }
+    catch (err)
     {
         return res.status(500).json({
             status      : "error",
@@ -114,7 +114,7 @@ exports.getTour = async function (req, res){
         "results": response.length,
         "data": response
         })
-            
+
     } catch (error) {
         return res.status(500).json({
             "status"     : "error",
@@ -127,11 +127,11 @@ exports.getTour = async function (req, res){
 exports.deleteTour = async function (req, res ){
     const key =  req.params.tour_code;
     const docs = await funtionHelprs.search(collectionName);
-    
+
     if(!docs){
         return res.status(400).json({
             error :  true,
-            msg   :  'Error en la validacion del tour'
+            msg   :  "Error en la validacion del tour"
           })
     }
 
@@ -144,7 +144,7 @@ exports.deleteTour = async function (req, res ){
     if(!buscar) {
         res.status(404).json({
             error :  true,
-            msg   :  'No se encontro el tour'
+            msg   :  "No se encontro el tour"
           })
     }
 
@@ -152,7 +152,7 @@ exports.deleteTour = async function (req, res ){
 
     const response = await funtionHelprs.delete(collectionName, id);
 
-    if(response.status === 'success'){
+    if(response.status === "success"){
         return res.status(200).json(response)
     }else{
         return res.status(500).json(response)
@@ -174,7 +174,7 @@ exports.putTour = async function (req, res ){
     if(!docs){
         return res.status(400).json({
             error :  true,
-            msg   :  'Error en la validacion del tour'
+            msg   :  "Error en la validacion del tour"
           })
     }
     const docResponse = docs.map(doc => ({
@@ -184,15 +184,15 @@ exports.putTour = async function (req, res ){
     if(!buscar) {
         res.status(404).json({
             error :  true,
-            msg   :  'No se encontro el tour'
+            msg   :  "No se encontro el tour"
           })
     }
 
-    const docsEmpresa = await funtionHelprs.search('empresa');
+    const docsEmpresa = await funtionHelprs.search("empresa");
     if(!docsEmpresa){
         return res.status(400).json({
             error :  true,
-            msg   :  'Error en la validacion de la empresa'
+            msg   :  "Error en la validacion de la empresa"
           })
     }
     const docEmpresaResponse = docsEmpresa.map(doc => (doc.data().codeRif))
@@ -200,17 +200,17 @@ exports.putTour = async function (req, res ){
     if(!buscarEmpresa) {
         res.status(404).json({
             error :  true,
-            msg   :  'No se encontro la empresa'
+            msg   :  "No se encontro la empresa"
           })
     }
 
     const id = key;
     const data = createJson(req.body)
-    
+
     if(!data){
        return res.status(400).json({
            error: true,
-           msg: 'Los campos enviados no coiciden con la coleccion o estan vacios'
+           msg: "Los campos enviados no coiciden con la coleccion o estan vacios"
        })
     }
 
@@ -229,7 +229,7 @@ exports.difficulty = async function (req, res ){
     try {
 
         const params =  req.body;
-        
+
 
         const { error } = schemaTourD.validate(req.body);
 
@@ -245,46 +245,46 @@ exports.difficulty = async function (req, res ){
         if(difficulty.length === 0){
             return res.status(404).json({
                 error :  true,
-                msg   :  'el arreglo esta vacio'
+                msg   :  "el arreglo esta vacio"
               })
         }
 
         if(difficulty.length > 2){
            return res.status(404).json({
                 error :  true,
-                msg   :  'el arreglo contiene mas informacion de la que es requerida'
+                msg   :  "el arreglo contiene mas informacion de la que es requerida"
               })
         }
 
-       
-    
-        if(difficulty[0] !== 'medium' && difficulty[0] !=='difficult'){
+
+
+        if(difficulty[0] !== "medium" && difficulty[0] !=="difficult"){
             return res.status(400).json({
                 error :  true,
-                msg   :  'el arreglo contiene informacion que no es requerida, intente con dificultades medium y difficult'
+                msg   :  "el arreglo contiene informacion que no es requerida, intente con dificultades medium y difficult"
               })
         }
 
         if(difficulty.length === 2 ){
-            if(difficulty[1] !== 'medium' && difficulty[1] !=='difficult'){
+            if(difficulty[1] !== "medium" && difficulty[1] !=="difficult"){
                 return res.status(400).json({
                     error :  true,
-                    msg   :  'el arreglo contiene informacion que no es requerida, intente con dificultades medium y difficult'
+                    msg   :  "el arreglo contiene informacion que no es requerida, intente con dificultades medium y difficult"
                   })
             }
         }
-        
-        
+
+
 
 
         let Ref = db.collection(collectionName);
-        let query = await Ref.where('difficulty', 'in', difficulty).get()
+        let query = await Ref.where("difficulty", "in", difficulty).get()
         let docs  = query.docs;
 
         if(docs.length === 0){
            return res.status(404).json({
                 error :  true,
-                msg   :  'No se encontro el cliente'
+                msg   :  "No se encontro el cliente"
               })
         }
 
@@ -304,18 +304,18 @@ exports.difficulty = async function (req, res ){
             startDate       :  doc.data().startDate,
             startLocation   :  doc.data().startLocation
             }))
-        
+
 
         const responseFilterR = response.filter( (elem) => {elem.ratingsAverage > 4.7})
-        
+
         if(responseFilterR.length === 0){
             return res.status(404).json({
                 error :  true,
-                msg   :  'No se encontro el ningun tour mayor a 4.7 de rating'
+                msg   :  "No se encontro el ningun tour mayor a 4.7 de rating"
               })
         }
 
-        
+
         res.status(200).json({
             "status": "success",
             "requestTime": today,
@@ -333,7 +333,7 @@ exports.difficulty = async function (req, res ){
             "requestTime": today,
             "description": error
             })
-        
+
     }
 }
 
@@ -393,23 +393,23 @@ function createJson(data) {
     }
 
     if(data.price ){
-        json.price  = data.price 
+        json.price  = data.price
     }
 
     if(data.summary ){
-        json.summary  = data.summary 
+        json.summary  = data.summary
     }
 
     if(data.description ){
-        json.description  = data.description 
+        json.description  = data.description
     }
 
     if(data.createdAt ){
-        json.createdAt = data.createdAt 
+        json.createdAt = data.createdAt
     }
 
     if(data.startDate ){
-        json.startDate = data.startDate 
+        json.startDate = data.startDate
     }
 
     if(data.startLocation ){

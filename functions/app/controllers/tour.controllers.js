@@ -16,7 +16,7 @@ const schemaTour = Joi.object({
     summary : Joi.string().trim().required(),
     description : Joi.string().trim(),
     createdAt : Joi.date().default(Date.now()),
-    startDate : Joi.string(),
+    startDate : Joi.date(),
     startLocation : Joi.string()
 })
 
@@ -32,8 +32,8 @@ const schemaTourEdit = Joi.object({
     summary         : Joi.string().trim(),
     description     : Joi.string().trim(),
     createdAt       : Joi.date().default(Date.now()),
-    startDate       : Joi.string(),
-    startLocation   : Joi.string()
+    startDate       : Joi.date(),
+    startLocation   : Joi.date()
 })
 
 const schemaTourD = Joi.object({
@@ -103,7 +103,7 @@ exports.getTour = async function (req, res){
                 price           : doc.data().price,
                 summary         : doc.data().summary,
                 description     : doc.data().description,
-                createdAt       : doc.data().createdAt,
+                createdAt       : new Date(doc.data().createdAt),
                 startDate       : doc.data().startDate,
                 startLocation   : doc.data().startLocation
             }))
@@ -316,7 +316,7 @@ exports.difficulty = async function (req, res ){
         }
 
 
-        res.status(200).json({
+        return res.status(200).json({
             "status": "success",
             "requestTime": today,
             "results": responseFilterR.length,
@@ -335,6 +335,58 @@ exports.difficulty = async function (req, res ){
             })
 
     }
+}
+
+exports.fecha = async function (req, res ){
+  const today = new Date().toLocaleString()
+  const params =  req.body;
+  try {
+    let Ref = db.collection(collectionName);
+    let query = await Ref.where("startDate", "=", params.fecha).get()
+    let docs  = query.docs;
+
+    if(docs.length === 0){
+       return res.status(404).json({
+            error :  true,
+            msg   :  "No se encontro ningun tour"
+          })
+    }
+
+    const response = docs.map(doc => ({
+        id              : doc.id,
+        codeRif         :  doc.data().codeRif,
+        name            :  doc.data().name,
+        duration        :  doc.data().duration,
+        maxGroupSize    :  doc.data().maxGroupSize,
+        difficulty      :  doc.data().difficulty,
+        ratingsAverage  :  doc.data().ratingsAverage,
+        ratingsQuantity :  doc.data().ratingsQuantity,
+        price           :  doc.data().price,
+        summary         :  doc.data().summary,
+        description     :  doc.data().description,
+        createdAt       :  doc.data().createdAt,
+        startDate       :  doc.data().startDate,
+        startLocation   :  doc.data().startLocation
+        }))
+
+
+        return res.status(200).json({
+            "status": "success",
+            "requestTime": today,
+            "results": response.length,
+            "data": response
+            })
+
+
+  } catch (e) {
+
+    return res.status(500).json({
+        "status"     : "error",
+        "requestTime": today,
+        "description": e
+        })
+
+  }
 }
 
 

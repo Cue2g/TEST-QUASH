@@ -19,8 +19,8 @@ const schemaTours = Joi.object({
     tours : Joi.array().required()
 })
 
-exports.postCliente = async function ( req, res) 
-{   
+exports.postCliente = async function ( req, res)
+{
     const { error } = schemaCliente.validate(req.body);
 
     if (error){
@@ -48,8 +48,8 @@ exports.postCliente = async function ( req, res)
             msg     : 'el usuario ya esta registrado'
         })
     }
-    
-    try 
+
+    try
     {
         await db.collection(collectionName)
             .doc()
@@ -58,11 +58,11 @@ exports.postCliente = async function ( req, res)
             {
                 status        : "success",
                 description   : "Se a guardado el cliente",
-                data          : [createCliente(req.body)] 
+                data          : [createCliente(req.body)]
            }
         );
-    } 
-    catch (error) 
+    }
+    catch (error)
     {
         return res.status(500).json({
             status      : "error",
@@ -87,7 +87,7 @@ exports.getCliente = async function (req, res){
         address   : doc.data().address,
         telefono  : doc.data().telefono,
         email     : doc.data().email,
-        fechaReg  : doc.data().fechaReg 
+        fechaReg  : doc.data().fechaReg
     }))
 
     return res.status(200).json({
@@ -96,7 +96,7 @@ exports.getCliente = async function (req, res){
         "results": response.length,
         "data": response
         })
-            
+
     } catch (error) {
         return res.status(500).json({
             "status"     : "error",
@@ -167,7 +167,7 @@ exports.putCliente = async function (req, res ){
     const id = buscar.id;
 
     const data = createJson(req.body)
-    
+
     if(!data){
        return res.status(400).json({
            error: true,
@@ -179,7 +179,7 @@ exports.putCliente = async function (req, res ){
     const response = await funtionHelprs.update(collectionName, id, data);
 
     return res.status(200).json(response)
-    
+
 }
 
 
@@ -233,8 +233,8 @@ exports.addTour = async function (req, res ){
             arraytoursPermitidos.push(search)
         }
     });
-    
-    
+
+
 
     if(arraytoursPermitidos.length === 0){
         return res.status(400).json({
@@ -251,7 +251,7 @@ exports.addTour = async function (req, res ){
 
 
     const id = buscar.id;
-    
+
     const response = await funtionHelprs.update(collectionName, id, {tours:resultArray});
 
     return res.status(200).json(response)
@@ -278,7 +278,7 @@ exports.deleteTour= async function (req, res ){
     const buscar = docResponse.find((elem) => elem.dni === key);
 
     if(!buscar) {
-        res.status(404).json({
+        return res.status(404).json({
             error :  true,
             msg   :  'No se encontro el cliente'
           })
@@ -290,7 +290,7 @@ exports.deleteTour= async function (req, res ){
 
 
     const id = buscar.id;
-    
+
     const response = await funtionHelprs.update(collectionName, id, {tours:resultArray});
 
     return res.status(200).json(response)
@@ -330,7 +330,7 @@ exports.getClienteID = async function (req, res ){
         const toursC = response[0].tours
 
         const docsT = await funtionHelprs.search('tour');
-    
+
         if(!docsT){
         return res.status(400).json({
             error :  true,
@@ -369,7 +369,7 @@ exports.getClienteID = async function (req, res ){
         "results": response.length,
         "data": response
         })
-            
+
     } catch (error) {
         return res.status(500).json({
             "status"     : "error",
@@ -390,7 +390,8 @@ function createCliente(body) {
         address   : body.address,
         telefono  : body.telefono,
         email     : body.email,
-        fechaReg  : Date.now()
+        fechaReg  : Date.now(),
+        tours:[]
     }
     return data
 }
@@ -431,10 +432,3 @@ function removeItemFromArr( arr, item ) {
         return e !== item;
     } );
 };
-
-
-
-
-
-
-

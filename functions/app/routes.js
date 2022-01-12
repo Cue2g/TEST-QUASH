@@ -15,6 +15,7 @@ module.exports = function(app){
   app.route(urlTour + "/idTour=:tour_code").delete(tour.deleteTour);
   app.route(urlTour + "/idTour=:tour_code").put(tour.putTour);
   app.route(urlTour + "/difficulty").get(tour.difficulty);
+  app.route(urlTour + "/fechaRango").get(tour.fechaRango)
   app.route(urlTour + "/fecha").get(tour.fecha)
 
   const urlCliente = "/api/cliente";

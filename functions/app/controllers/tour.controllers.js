@@ -41,7 +41,7 @@ const schemaTourD = Joi.object({
 })
 
 exports.postTour= async function ( req, res) {
-
+    const today = new Date().toLocaleString()
     const docs = await funtionHelprs.search("empresa");
     const response = docs.map((doc) => (doc.data().codeRif));
     const validar = response.some((elem) => elem === req.params.tour_code);
@@ -86,10 +86,9 @@ exports.postTour= async function ( req, res) {
 }
 
 exports.getTour = async function (req, res){
-
+    const today = new Date().toLocaleString()
     try {
 
-        const today = new Date().toLocaleString()
         const docs = await funtionHelprs.search(collectionName);
         const response = docs.map(doc => ({
                 id              : doc.id,
@@ -103,8 +102,8 @@ exports.getTour = async function (req, res){
                 price           : doc.data().price,
                 summary         : doc.data().summary,
                 description     : doc.data().description,
-                createdAt       : new Date(doc.data().createdAt),
-                startDate       : doc.data().startDate,
+                createdAt       : doc.data().createdAt,
+                startDate       : stringTime(doc.data().startDate),
                 startLocation   : doc.data().startLocation
             }))
 
@@ -180,6 +179,7 @@ exports.putTour = async function (req, res ){
     const docResponse = docs.map(doc => ({
         id        : doc.id,
     }))
+
     const buscar = docResponse.find((elem) => elem.id === key);
     if(!buscar) {
         res.status(404).json({
@@ -189,20 +189,27 @@ exports.putTour = async function (req, res ){
     }
 
     const docsEmpresa = await funtionHelprs.search("empresa");
+
     if(!docsEmpresa){
         return res.status(400).json({
             error :  true,
             msg   :  "Error en la validacion de la empresa"
           })
     }
-    const docEmpresaResponse = docsEmpresa.map(doc => (doc.data().codeRif))
-    const buscarEmpresa = docEmpresaResponse.find((elem) => elem === req.body.codeRif);
-    if(!buscarEmpresa) {
-        res.status(404).json({
-            error :  true,
-            msg   :  "No se encontro la empresa"
-          })
+
+    if(req.body.codeRif){
+      const docEmpresaResponse = docsEmpresa.map(doc => (doc.data().codeRif))
+      const buscarEmpresa = docEmpresaResponse.find((elem) => elem === req.body.codeRif);
+      if(!buscarEmpresa) {
+          res.status(404).json({
+              error :  true,
+              msg   :  "No se encontro la empresa"
+            })
+      }
     }
+
+
+
 
     const id = key;
     const data = createJson(req.body)
@@ -305,9 +312,10 @@ exports.difficulty = async function (req, res ){
             startLocation   :  doc.data().startLocation
             }))
 
+        let rating = 4.7;
+        const responseFilterR = response.filter( (elem) => elem.ratingsAverage > rating)
 
-        const responseFilterR = response.filter( (elem) => {elem.ratingsAverage > 4.7})
-
+        console.log(responseFilterR);
         if(responseFilterR.length === 0){
             return res.status(404).json({
                 error :  true,
@@ -338,11 +346,66 @@ exports.difficulty = async function (req, res ){
 }
 
 exports.fecha = async function (req, res ){
+  console.log('here');
+  const today = new Date().toLocaleString()
+  const params =  req.body;
+
+  try {
+    let startDateR = new Date(params.fecha)
+    let Ref = db.collection(collectionName);
+    let query = await Ref.where("startDate", "=", startDateR ).get()
+    let docs  = query.docs;
+    if(docs.length === 0){
+       return res.status(404).json({
+            error :  true,
+            msg   :  "No se encontro ningun tour"
+          })
+    }
+
+    const response = docs.map(doc => ({
+        id              : doc.id,
+        codeRif         :  doc.data().codeRif,
+        name            :  doc.data().name,
+        duration        :  doc.data().duration,
+        maxGroupSize    :  doc.data().maxGroupSize,
+        difficulty      :  doc.data().difficulty,
+        ratingsAverage  :  doc.data().ratingsAverage,
+        ratingsQuantity :  doc.data().ratingsQuantity,
+        price           :  doc.data().price,
+        summary         :  doc.data().summary,
+        description     :  doc.data().description,
+        createdAt       :  doc.data().createdAt,
+        startDate       :  timeFun(doc.data().startDate),
+        startLocation   :  doc.data().startLocation
+        }))
+
+        return res.status(200).json({
+            "status": "success",
+            "requestTime": today,
+            "results": response.length,
+            "data": response
+            })
+
+
+  } catch (e) {
+
+    return res.status(404).json({
+        "status"     : "error",
+        "requestTime": today,
+        "description": "no se encontro ningun tour"
+        })
+
+  }
+}
+
+
+exports.fechaRango = async function (req, res ){
   const today = new Date().toLocaleString()
   const params =  req.body;
   try {
+    let startDateR = new Date(params.desde)
     let Ref = db.collection(collectionName);
-    let query = await Ref.where("startDate", "=", params.fecha).get()
+    let query = await Ref.where("startDate", ">=", startDateR ).get()
     let docs  = query.docs;
 
     if(docs.length === 0){
@@ -365,16 +428,18 @@ exports.fecha = async function (req, res ){
         summary         :  doc.data().summary,
         description     :  doc.data().description,
         createdAt       :  doc.data().createdAt,
-        startDate       :  doc.data().startDate,
+        startDate       :  timeFun(doc.data().startDate),
         startLocation   :  doc.data().startLocation
         }))
 
+        let hastaFecha = new Date(params.hasta)
+        const responseFilterR = response.filter( (elem) => elem.startDate < hastaFecha)
 
         return res.status(200).json({
             "status": "success",
             "requestTime": today,
-            "results": response.length,
-            "data": response
+            "results": responseFilterR.length,
+            "data": responseFilterR
             })
 
 
@@ -383,7 +448,7 @@ exports.fecha = async function (req, res ){
     return res.status(500).json({
         "status"     : "error",
         "requestTime": today,
-        "description": e
+        "description": "No se encontro ningung tour"
         })
 
   }
@@ -391,7 +456,9 @@ exports.fecha = async function (req, res ){
 
 
 function createTour(body) {
+
     const today = new Date().toLocaleString()
+    let startDateR = new Date(body.startDate)
     const data = {
         codeRif         : body.codeRif,
         name            : body.name,
@@ -403,7 +470,7 @@ function createTour(body) {
         summary         : body.summary,
         description     : body.description,
         createdAt       : today,
-        startDate       : body.startDate,
+        startDate       : startDateR,
         startLocation   : body.startLocation
     }
     return data
@@ -474,4 +541,16 @@ function createJson(data) {
     }else{
         return json
     }
+}
+
+function timeFun(timestamp) {
+  let date = new Date((timestamp._seconds * 1000));
+  let res = date.getTime();
+  return res
+}
+
+function stringTime(timestamp){
+  let time = timeFun(timestamp)
+  let res = new Date(time)
+  return res
 }

@@ -36,7 +36,7 @@ Todos los response con status de error presentar el mensaje del error asociado
  
 
 Ejemplo de variables solicitadas en cada collection:
-
+<code>
    collection Tour:
   {
       'name': 'The Sports Lover',
@@ -107,6 +107,6 @@ Referencia de Schema y mensajes a ser presentados en el Response
         startLocation: String
     }
 )  
- 
+</code>
 
 Tú, tienes la libertad en ampliar el escenario planteado siempre y cuando se mantenga la información brindada como base, es decir si desea emplear nuevos endPoint o considera prudente crear nuevas colleciones para la ejecución del ejercicio del micro proyecto.
